@@ -1,0 +1,24 @@
+---
+abstract: 'Logging class used by EntityModel'
+author:
+  - 'Tom Molesworth <tom@entitymodel.com>'
+build_requires: {}
+configure_requires:
+  ExtUtils::MakeMaker: 6.31
+dynamic_config: 0
+generated_by: 'Dist::Zilla version 4.200001, CPAN::Meta::Converter version 2.110240'
+license: perl
+meta-spec:
+  url: http://module-build.sourceforge.net/META-spec-v1.4.html
+  version: 1.4
+name: EntityModel-Log
+requires:
+  Data::Dump: 0
+  Exporter: 0
+  IO::Handle: 0
+  List::Util: 0
+  POSIX: 0
+  Time::HiRes: 0
+  parent: 0
+  perl: 5.010
+version: 0.001
