@@ -4,11 +4,15 @@ use strict;
 use warnings FATAL => 'all', NONFATAL => 'redefine';
 use parent qw{Exporter};
 
-our $VERSION = '0.001';
+our $VERSION = '0.002';
 
 =head1 NAME
 
 EntityModel::Log - simple logging support for L<EntityModel>
+
+=head1 VERSION
+
+version 0.002
 
 =head1 SYNOPSIS
 
@@ -166,6 +170,12 @@ Constructor - currently doesn't do much.
 
 sub new { bless { path => 'entitymodel.log' }, shift }
 
+=head2 path
+
+Accessor for path setting, if given a new path will close existing file and direct all new output to the given path.
+
+=cut
+
 sub path {
 	my $self = shift;
 	if(@_) {
@@ -176,6 +186,12 @@ sub path {
 	}
 	return $self->{path};
 }
+
+=head2 handle
+
+Direct accessor for the file handle.
+
+=cut
 
 sub handle {
 	my $self = shift;
@@ -189,6 +205,12 @@ sub handle {
 	return $self->{handle};
 }
 
+=head2 pid
+
+Current PID, used for fork tracking.
+
+=cut
+
 sub pid {
 	my $self = shift;
 	if(@_) {
@@ -197,6 +219,12 @@ sub pid {
 	}
 	return $self->{pid};
 }
+
+=head2 isOpen
+
+Returns true if our log file is already open.
+
+=cut
 
 sub isOpen {
 	my $self = shift;
@@ -207,6 +235,11 @@ sub isOpen {
 	return $self->{isOpen};
 }
 
+=head2 disabled
+
+Returns true if we're running disabled.
+=cut
+
 sub disabled {
 	my $self = shift;
 	if(@_) {
@@ -215,6 +248,12 @@ sub disabled {
 	}
 	return $self->{disabled};
 }
+
+=head2 close
+
+Close the log file if it's currently open.
+
+=cut
 
 sub close : method {
 	my $self = shift;
@@ -227,6 +266,12 @@ sub close : method {
 	$self->isOpen(0)->handle(undef);
 }
 
+=head2 open
+
+Open the logfile.
+
+=cut
+
 sub open : method {
 	my $self = shift;
 	return $self if $self->isOpen;
@@ -235,6 +280,12 @@ sub open : method {
 	$fh->autoflush(1);
 	$self->handle($fh)->isOpen(1)->pid($$);
 }
+
+=head2 reopen
+
+Helper method to close and reopen logfile.
+
+=cut
 
 sub reopen {
 	my $self = shift;
@@ -366,6 +417,10 @@ END { $instance->close if $instance; }
 
 1;
 
+=head1 SEE ALSO
+
+L<Log::Log4perl> or just search for "log" on search.cpan.org, plenty of other options.
+
 =head1 AUTHOR
 
 Tom Molesworth <cpan@entitymodel.com>
@@ -373,4 +428,3 @@ Tom Molesworth <cpan@entitymodel.com>
 =head1 LICENSE
 
 Copyright Tom Molesworth 2008-2011. Licensed under the same terms as Perl itself.
-

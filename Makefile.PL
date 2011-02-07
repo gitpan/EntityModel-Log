@@ -28,7 +28,7 @@ my %WriteMakefileArgs = (
     'Time::HiRes' => '0',
     'parent' => '0'
   },
-  'VERSION' => '0.001',
+  'VERSION' => '0.002',
   'test' => {
     'TESTS' => 't/*.t'
   }
