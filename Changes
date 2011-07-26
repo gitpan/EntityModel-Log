@@ -1,4 +1,10 @@
+0.003     2011-07-26 23:15:24 Europe/London
+	Use STDERR as the default handle, rather than randomly creating entitymodel.log files.
+	Only check handle once in ->close, and move the close-on-fork to a separate
+	method which avoids closing unless we're already open.
+
 0.002     2011-02-07 19:11:25 Europe/London
+	Documentation.
 
 0.001     2011-02-01 04:35:26 Europe/London
 	Initial release to CPAN.

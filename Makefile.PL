@@ -2,9 +2,9 @@
 use strict;
 use warnings;
 
-BEGIN { require 5.010; }
+use 5.010;
 
-use ExtUtils::MakeMaker 6.31;
+use ExtUtils::MakeMaker 6.30;
 
 
 
@@ -13,7 +13,7 @@ my %WriteMakefileArgs = (
   'AUTHOR' => 'Tom Molesworth <tom@entitymodel.com>',
   'BUILD_REQUIRES' => {},
   'CONFIGURE_REQUIRES' => {
-    'ExtUtils::MakeMaker' => '6.31'
+    'ExtUtils::MakeMaker' => '6.30'
   },
   'DISTNAME' => 'EntityModel-Log',
   'EXE_FILES' => [],
@@ -28,7 +28,7 @@ my %WriteMakefileArgs = (
     'Time::HiRes' => '0',
     'parent' => '0'
   },
-  'VERSION' => '0.002',
+  'VERSION' => '0.003',
   'test' => {
     'TESTS' => 't/*.t'
   }

@@ -4,7 +4,7 @@ use strict;
 use warnings FATAL => 'all', NONFATAL => 'redefine';
 use parent qw{Exporter};
 
-our $VERSION = '0.002';
+our $VERSION = '0.003';
 
 =head1 NAME
 
@@ -12,7 +12,7 @@ EntityModel::Log - simple logging support for L<EntityModel>
 
 =head1 VERSION
 
-version 0.002
+version 0.003
 
 =head1 SYNOPSIS
 
@@ -24,7 +24,9 @@ version 0.002
 
 =head1 DESCRIPTION
 
-Yet another logging class. Provides a procedural and OO interface as usual.
+Yet another logging class. Provides a procedural and OO interface as usual - intended for use
+with L<EntityModel> only, if you're looking for a general logging framework try one of the
+other options in the L</SEE ALSO> section.
 
 =cut
 
@@ -168,7 +170,7 @@ Constructor - currently doesn't do much.
 
 =cut
 
-sub new { bless { path => 'entitymodel.log' }, shift }
+sub new { bless { handle => \*STDERR, isOpen => 1, pid => $$ }, shift }
 
 =head2 path
 
@@ -202,7 +204,7 @@ sub handle {
 		$self->pid($$);
 		return $self;
 	}
-	return $self->{handle};
+	return $self->{handle} || $self->reopen;
 }
 
 =head2 pid
@@ -258,12 +260,30 @@ Close the log file if it's currently open.
 sub close : method {
 	my $self = shift;
 	return $self unless $self->isOpen;
-	if($self->handle) {
-		close $self->handle;
+	if(my $h = $self->handle) {
+		close $h or die "Failed to close log file: $!\n";
 	}
 
-# Clear handle *after* isOpen status
-	$self->isOpen(0)->handle(undef);
+	delete $self->{handle};
+
+	$self->isOpen(0);
+	return $self;
+}
+
+=head2 close_after_fork
+
+Close any active handle if we've forked. This method just does the closing, not the check for $$.
+
+=cut
+
+sub close_after_fork {
+	my $self = shift;
+	return unless $self->isOpen;
+
+# Don't close STDOUT/STDERR. Bit of a hack really, we should perhaps just close when we were given a path?
+	return if $self->handle ~~ [\*STDERR, \*STDOUT];
+	$self->close;
+	return $self;
 }
 
 =head2 open
@@ -276,9 +296,10 @@ sub open : method {
 	my $self = shift;
 	return $self if $self->isOpen;
 	open my $fh, '>>', $self->path or die $! . " for " . $self->path;
-	binmode $fh, ':encoding(utf8)';
+	binmode $fh, ':encoding(utf-8)';
 	$fh->autoflush(1);
-	$self->handle($fh)->isOpen(1)->pid($$);
+	$self->handle($fh);
+	return $self;
 }
 
 =head2 reopen
@@ -306,7 +327,7 @@ Item parsing handles the following types:
 
 =item * Single string is passed through unchanged
 
-=item * Any coderef is expanded in place
+=item * Any coderef is expanded in place (recursively - a coderef can return other coderefs)
 
 =item * Arrayref or hashref is expanded via L<Data::Dump>
 
@@ -396,12 +417,11 @@ sub raise {
 	my $ts = timestamp();
 
 	my $type = sprintf("%-8.8s", $LogType[$level]);
-	$self->reopen unless $$ ~~ $self->pid;
+	$self->close_after_fork unless $$ ~~ $self->pid;
 	$self->open unless $self->isOpen;
 	$self->handle->print("$ts $type $file:$line $txt\n");
 	return $self;
 }
-
 
 =head2 debug
 
@@ -416,6 +436,8 @@ sub debug {
 END { $instance->close if $instance; }
 
 1;
+
+__END__
 
 =head1 SEE ALSO
 

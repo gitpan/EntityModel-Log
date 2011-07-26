@@ -4,9 +4,9 @@ author:
   - 'Tom Molesworth <tom@entitymodel.com>'
 build_requires: {}
 configure_requires:
-  ExtUtils::MakeMaker: 6.31
+  ExtUtils::MakeMaker: 6.30
 dynamic_config: 0
-generated_by: 'Dist::Zilla version 4.200001, CPAN::Meta::Converter version 2.110350'
+generated_by: 'Dist::Zilla version 4.200009, CPAN::Meta::Converter version 2.110930001'
 license: perl
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
@@ -21,4 +21,4 @@ requires:
   Time::HiRes: 0
   parent: 0
   perl: 5.010
-version: 0.002
+version: 0.003
