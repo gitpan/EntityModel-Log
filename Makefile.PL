@@ -9,28 +9,28 @@ use ExtUtils::MakeMaker 6.30;
 
 
 my %WriteMakefileArgs = (
-  'ABSTRACT' => 'Logging class used by EntityModel',
-  'AUTHOR' => 'Tom Molesworth <tom@entitymodel.com>',
-  'BUILD_REQUIRES' => {},
-  'CONFIGURE_REQUIRES' => {
-    'ExtUtils::MakeMaker' => '6.30'
+  "ABSTRACT" => "Logging class used by EntityModel",
+  "AUTHOR" => "Tom Molesworth <tom\@entitymodel.com>",
+  "BUILD_REQUIRES" => {},
+  "CONFIGURE_REQUIRES" => {
+    "ExtUtils::MakeMaker" => "6.30"
   },
-  'DISTNAME' => 'EntityModel-Log',
-  'EXE_FILES' => [],
-  'LICENSE' => 'perl',
-  'NAME' => 'EntityModel::Log',
-  'PREREQ_PM' => {
-    'Data::Dump' => '0',
-    'Exporter' => '0',
-    'IO::Handle' => '0',
-    'List::Util' => '0',
-    'POSIX' => '0',
-    'Time::HiRes' => '0',
-    'parent' => '0'
+  "DISTNAME" => "EntityModel-Log",
+  "EXE_FILES" => [],
+  "LICENSE" => "perl",
+  "NAME" => "EntityModel::Log",
+  "PREREQ_PM" => {
+    "Data::Dump" => 0,
+    "Exporter" => 0,
+    "IO::Handle" => 0,
+    "List::Util" => 0,
+    "POSIX" => 0,
+    "Time::HiRes" => 0,
+    "parent" => 0
   },
-  'VERSION' => '0.003',
-  'test' => {
-    'TESTS' => 't/*.t'
+  "VERSION" => "0.004",
+  "test" => {
+    "TESTS" => "t/*.t"
   }
 );
 

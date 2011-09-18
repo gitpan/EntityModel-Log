@@ -3,6 +3,7 @@ use warnings;
 
 use Test::More tests => 7;
 use EntityModel::Log ':all';
+EntityModel::Log->instance->min_level(0);
 
 # Check that we format messages correctly
 my @messageList = (
@@ -17,9 +18,10 @@ my @messageList = (
 while(@messageList) {
 	my $param = shift(@messageList);
 	my $expected = shift(@messageList);
-	is(EntityModel::Log->parseMessage(@$param), $expected, 'expect ' . $expected);
+	is(EntityModel::Log->parse_message(@$param), $expected, 'expect ' . $expected);
 }
 
+logDebug("Redirect to a string");
 my $str = '';
 open my $fh, '>', \$str or die $!;
 $fh->autoflush(1);

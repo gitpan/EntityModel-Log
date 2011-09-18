@@ -5,6 +5,7 @@ META.yml
 Makefile.PL
 README
 dist.ini
+examples/simple.pl
 lib/EntityModel/Log.pm
 t/00-pod.t
 t/00-use.t
