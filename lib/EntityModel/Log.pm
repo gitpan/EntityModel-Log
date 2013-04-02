@@ -3,8 +3,9 @@ package EntityModel::Log;
 use strict;
 use warnings FATAL => 'all', NONFATAL => 'redefine';
 use parent qw{Exporter};
+no if $] >= 5.017011, warnings => "experimental::smartmatch";
 
-our $VERSION = '0.004';
+our $VERSION = '0.005';
 
 =head1 NAME
 
@@ -12,7 +13,7 @@ EntityModel::Log - simple logging support for L<EntityModel>
 
 =head1 VERSION
 
-version 0.004
+version 0.005
 
 =head1 SYNOPSIS
 
@@ -59,7 +60,7 @@ use Data::Dump::Filtered ();
 our %EXPORT_TAGS = ( 'all' => [qw/&logDebug &logInfo &logWarning &logError/] );
 our @EXPORT_OK = ( @{$EXPORT_TAGS{'all'}} );
 
-# Internal singleton instance 
+# Internal singleton instance
 my $instance;
 
 =head2 instance
@@ -152,7 +153,7 @@ sub _stack_trace {
 	my $dump = shift || 0;
 	my $idx = 1;
 	my @trace;
-	my $basePath = '';
+	my $pkg = __PACKAGE__;
 	{
 		package DB;
 		while($idx < 99 && (my @stack = caller($idx))) {
@@ -162,7 +163,9 @@ sub _stack_trace {
 			my %info;
 			@info{qw/package filename line subroutine hasargs wantarray evaltext is_require hints bitmask hinthash/} = map $_ // '', @stack;
 			$info{args} = [ @DB::args ];
-			push @trace, \%info;
+
+			# TODO not happy with this. maybe switch to ->isa?
+			push @trace, \%info unless $info{package} eq $pkg;
 		}
 	}
 
@@ -178,7 +181,6 @@ sub _stack_trace {
 				# Probably not a safe thing to do, but most modules seem to be ascii or utf8
 				open my $fh, '<:encoding(utf8)', $info->{filename} or die $! . ' when reading ' . $info->{filename} . ' which we expected to have loaded already';
 
-				# 
 				if($start) {
 					<$fh> for 1..$start;
 				}
@@ -188,7 +190,7 @@ sub _stack_trace {
 			}
 		}
 	}
-	return reverse @trace;
+	return @trace;
 }
 
 =head2 _level_from_string
@@ -334,10 +336,9 @@ sub close : method {
 	return $self unless $self->is_open;
 
 	if(my $h = delete $self->{handle}) {
-		# Mark as closed so we try to open a new handle even if we break this one off here
-		$self->is_open(0);
 		$h->close or die "Failed to close log file: $!\n";
 	}
+	$self->is_open(0);
 	return $self;
 }
 
@@ -369,7 +370,9 @@ sub open : method {
 	open my $fh, '>>', $self->path or die $! . " for " . $self->path;
 	binmode $fh, ':encoding(utf-8)';
 	$fh->autoflush(1);
-	$self->handle($fh);
+	$self->{handle} = $fh;
+	$self->is_open(1);
+	$self->pid($$);
 	return $self;
 }
 
@@ -463,6 +466,28 @@ sub parse_message {
 	return sprintf($fmt, @data);
 }
 
+=head2 min_level
+
+Accessor for the current minimum logging level. Values correspond to:
+
+=over 4
+
+=item * 0 - Debug
+
+=item * 1 - Info
+
+=item * 2 - Warning
+
+=item * 3 - Error
+
+=item * 4 - Fatal
+
+=back
+
+Returns $self when setting a value, otherwise the current value is returned.
+
+=cut
+
 sub min_level {
 	my $self = shift;
 	if(@_) {
@@ -487,9 +512,9 @@ Raise a log message
 =cut
 
 sub raise {
-	my $self = shift;
-	return $self if $self->disabled;
+	return $_[0] if $_[0]->disabled;
 
+	my $self = shift;
 	my $level = shift;
 	my ($pkg, $file, $line, $sub) = caller(1);
 
@@ -497,10 +522,10 @@ sub raise {
 	(undef, undef, undef, $sub) = caller(2);
 
 # Apply minimum log level based on method, then class, then default 'info'
-	my $minLevel = ($sub ? $self->{mask}->{$sub}->{level} : undef);
-	$minLevel //= $self->{mask}->{$pkg}->{level};
-	$minLevel //= $self->{min_level};
-	$minLevel //= 1;
+	my $minLevel = ($sub ? $self->{mask}{$sub}{level} : undef)
+		// $self->{mask}{$pkg}{level}
+		// $self->{min_level}
+		// 1;
 	return $self if $minLevel > $level;
 
 	my $txt = $self->parse_message(@_);
@@ -514,6 +539,8 @@ sub raise {
 }
 
 =head2 output
+
+Sends output to the current filehandle.
 
 =cut
 
@@ -565,7 +592,8 @@ sub handle {
 		$self->pid($$);
 		return $self;
 	}
-	return $self->{handle} || $self->reopen;
+	$self->reopen unless $self->{handle};
+	return $self->{handle};
 }
 
 END { $instance->close if $instance; }
@@ -576,7 +604,7 @@ __END__
 
 =head1 SEE ALSO
 
-L<Log::Log4perl> or just search for "log" on search.cpan.org, plenty of other options.
+L<Log::Any>, L<Log::Log4perl> or just search for "log" on search.cpan.org, plenty of other options.
 
 =head1 AUTHOR
 
@@ -584,4 +612,4 @@ Tom Molesworth <cpan@entitymodel.com>
 
 =head1 LICENSE
 
-Copyright Tom Molesworth 2008-2011. Licensed under the same terms as Perl itself.
+Copyright Tom Molesworth 2008-2013. Licensed under the same terms as Perl itself.
