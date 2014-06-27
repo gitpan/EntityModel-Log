@@ -1,11 +1,10 @@
 package EntityModel::Log;
 # ABSTRACT: Logging class used by EntityModel
 use strict;
-use warnings FATAL => 'all', NONFATAL => 'redefine';
+use warnings;
 use parent qw{Exporter};
-no if $] >= 5.017011, warnings => "experimental::smartmatch";
 
-our $VERSION = '0.005';
+our $VERSION = '0.006';
 
 =head1 NAME
 
@@ -13,7 +12,7 @@ EntityModel::Log - simple logging support for L<EntityModel>
 
 =head1 VERSION
 
-version 0.005
+version 0.006
 
 =head1 SYNOPSIS
 
@@ -172,7 +171,7 @@ sub _stack_trace {
 	foreach my $info (@trace) {
 		$info->{file} = File::Basename::basename($info->{filename});
 		$info->{code} = '';
-		if($dump) { # could include source context using something like $info{filename} ~~ m{^$basePath/(.*)$} || $info{filename} ~~ m{^/perl-module-path/(.*)$}) {
+		if($dump) { # could include source context using something like $info{filename} =~ m{^$basePath/(.*)$} || $info{filename} =~ m{^/perl-module-path/(.*)$}) {
 			# I'm hoping this entire function can be replaced by a module from somewhere
 			if(-r $info->{filename}) {
 				# Start from five lines before the required line, but clamp to zero
@@ -185,7 +184,7 @@ sub _stack_trace {
 					<$fh> for 1..$start;
 				}
 				my $line = $start;
-				$info->{code} .= sprintf("%5d %s", $line++, <$fh> // last) for 0..10;
+				$info->{code} .= sprintf("%5d %s", $line++, scalar(<$fh> // last)) for 0..10;
 				close $fh;
 			}
 		}
@@ -203,7 +202,7 @@ sub _level_from_string {
 	my $str = lc(shift);
 	my $idx = 0;
 	foreach (@LogType) {
-		return $idx if $str ~~ lc($_);
+		return $idx if $str eq lc($_);
 		++$idx;
 	}
 	die "Bad log level [$str]";
@@ -353,7 +352,7 @@ sub close_after_fork {
 	return unless $self->is_open;
 
 # Don't close STDOUT/STDERR. Bit of a hack really, we should perhaps just close when we were given a path?
-	return if $self->handle ~~ [\*STDERR, \*STDOUT];
+	return if $self->handle == \*STDERR || $self->handle == \*STDOUT;
 	$self->close;
 	return $self;
 }
@@ -416,10 +415,9 @@ level of recursion.
 
 sub parse_message {
 	my $self = shift;
-#	warn $_[0];
 	return '' unless @_;
 
-	unshift @_, $_[0]->() while ref($_[0]) ~~ /^CODE/;
+	unshift @_, $_[0]->() while $_[0] && ref($_[0]) eq 'CODE';
 
 # Decompose parameters into strings
 	my @data;
@@ -429,10 +427,10 @@ sub parse_message {
 
 # Convert to string if we can
 		if(my $ref = ref $entry) {
-			if($ref ~~ /^CODE/) {
+			if($ref =~ /^CODE/) {
 				unshift @_, $entry->();
 				next ITEM;
-			} elsif($ref ~~ [qw{ARRAY HASH}]) {
+			} elsif($ref eq 'ARRAY' or $ref eq 'HASH') {
 				$entry = Data::Dump::dump($entry);
 			} else {
 				$entry = "$entry";
@@ -447,23 +445,28 @@ sub parse_message {
 	return $fmt unless @data;
 
 	# Special-case the stack trace feature. A bit too special really :(
-	$fmt =~ s/%S/join "\n", '', map {
-		my $txt = sprintf ' => %-32.32s %s(%s)',
-			$_->{package} . ':' . $_->{line},
-			($_->{subroutine} =~ m{ ( [^:]+$ ) }x),
-			  ($_->{package} ~~ 'EntityModel::Log')
-			? ('')
-			: (join ', ', map Data::Dump::Filtered::dump_filtered($_, sub {
-				my ($ctx, $obj) = @_;
-				return undef unless $ctx->is_blessed;
-				return { dump => "$obj" };
-			}), @{ $_->{args} });
-		$txt =~ s{%}{%%}g;
-		$txt;
-	} _stack_trace(0, 1)/e;
+	$fmt =~ s/%S/join("\n", '', map {
+		_stack_line($_)
+	} _stack_trace(0, 1))/e;
 	die "Format undef" unless defined $fmt;
 	die "Undefined entry in data, others are " . join ', ', map { defined($_) } @data if grep { !defined($_) } @data;
 	return sprintf($fmt, @data);
+}
+
+sub _stack_line {
+	my $info = shift;
+	my $txt = sprintf ' => %-32.32s %s(%s) args %s',
+		$info->{package} . ':' . $info->{line},
+		($info->{subroutine} =~ m{ ( [^:]+$ ) }x),
+		  ($info->{package} eq 'EntityModel::Log')
+		? ('')
+		: (join ', ', map Data::Dump::Filtered::dump_filtered($info, sub {
+			my ($ctx, $obj) = @_;
+			return undef unless $ctx->is_blessed;
+			return { dump => "$obj" };
+		})), join ' ', map $_ // '<undef>', @{ $info->{args} };
+	$txt =~ s{%}{%%}g;
+	return $txt;
 }
 
 =head2 min_level
@@ -571,7 +574,7 @@ sub get_handle {
 		return \*STDERR if exists $self->{handle};
 	}
 
-	$self->close_after_fork unless $$ ~~ $self->pid;
+	$self->close_after_fork unless $$ == $self->pid;
 
 	$self->open unless $self->is_open;
 	return $self->handle;
@@ -612,4 +615,4 @@ Tom Molesworth <cpan@entitymodel.com>
 
 =head1 LICENSE
 
-Copyright Tom Molesworth 2008-2013. Licensed under the same terms as Perl itself.
+Copyright Tom Molesworth 2008-2014. Licensed under the same terms as Perl itself.

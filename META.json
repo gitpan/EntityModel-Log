@@ -4,7 +4,7 @@
       "Tom Molesworth <tom@entitymodel.com>"
    ],
    "dynamic_config" : 0,
-   "generated_by" : "Dist::Zilla version 4.300031, CPAN::Meta::Converter version 2.120921",
+   "generated_by" : "Dist::Zilla version 5.019, CPAN::Meta::Converter version 2.140640",
    "license" : [
       "perl_5"
    ],
@@ -40,6 +40,9 @@
       },
       "test" : {
          "requires" : {
+            "File::Spec" : "0",
+            "IO::Handle" : "0",
+            "IPC::Open3" : "0",
             "Test::More" : "0.98"
          }
       }
@@ -52,6 +55,6 @@
       },
       "homepage" : "http://search.cpan.org/dist/EntityModel-Log/"
    },
-   "version" : "0.005"
+   "version" : "0.006"
 }
 
